@@ -950,47 +950,6 @@ class PsiturkNetworkShell(PsiturkShell):
                 if user_input != 'y':
                     return
 
-        # Validate arguments
-        # numWorkers
-        if numWorkers is None:
-            numWorkers = raw_input('number of participants? ').strip()
-        try:
-            numWorkers = int(numWorkers)
-        except ValueError:
-            print '*** number of participants must be a whole number'
-            return
-        if numWorkers <= 0:
-            print '*** number of participants must be greater than 0'
-            return
-
-        # reward
-        if reward is None:
-            reward = raw_input('reward per HIT? ').strip()
-        p = re.compile('^\d*\.\d\d$')
-        m = p.match(reward)
-        if m is None:
-            print '*** reward must have format [dollars].[cents]'
-            return
-        try:
-            reward = float(reward)
-        except:
-            print '*** reward must be in format [dollars].[cents]'
-            return
-            
-        # duration
-        if duration is None:
-            duration = raw_input(
-                'duration of hit (in hours, it can be decimals)? ').strip()
-        try:
-            duration = float(duration)
-        except ValueError:
-            print '*** duration must a number'
-            return
-        if duration <= 0:
-            print '*** duration must be greater than 0'
-            return
-        
-
         if use_psiturk_ad_server:
 
             ad_id = self.create_psiturk_ad() 
@@ -1601,8 +1560,7 @@ class PsiturkNetworkShell(PsiturkShell):
         if interactive:
             valid = False
             while not valid:
-                dbname = raw_input('name for first database on this instance \
-                                   (see rules): ')
+                dbname = raw_input('name for first database on this instance (see rules): ')
                 res = self.db_services.validate_instance_dbname(dbname)
                 if res is True:
                     valid = True
@@ -1710,8 +1668,62 @@ class PsiturkNetworkShell(PsiturkShell):
         """
 
         if arg['create']:
-            self.hit_create(arg['<numWorkers>'], arg['<reward>'],
-                            arg['<duration>'])
+            # number of workers
+            if arg['<numWorkers>'] is None:
+                numWorkers = raw_input('number of participants? ').strip()
+            else:
+                numWorkers = arg['<numWorkers>']
+            try:
+                numWorkers = int(numWorkers)
+            except ValueError:
+                print '*** number of participants must be a whole number'
+                return
+
+            # reward
+            if arg['<reward>'] is None:
+                reward = raw_input('reward per HIT? ').strip()
+            else:
+                reward = arg['<reward>']
+            p = re.compile('^\d*\.\d\d$')
+            m = p.match(reward)
+            if m is None:
+                print '*** reward must have format [dollars].[cents]'
+                return
+            try:
+                reward = float(reward)
+            except:
+                print '*** reward must be in format [dollars].[cents]'
+                return
+
+            # duration
+            if arg['<duration>'] is None:
+                duration = raw_input('duration of hit (in hours, it can be decimals)? ').strip()
+            else:
+                duration = arg['<duration>']
+            try:
+                duration = float(duration)
+            except ValueError:
+                print '*** duration must a number'
+                return
+            if duration <= 0:
+                print '*** duration must be greater than 0'
+                return
+
+            # greater than 9 workers           
+            if numWorkers > 9:
+                quotient = numWorkers / 9
+                remainder = numWorkers % 9
+                i = 0
+                while i < quotient:
+                    self.hit_create(9, reward, duration)
+                    i += 1
+                if remainder > 0:
+                    self.hit_create(remainder, reward, duration)
+
+            # fewer than 9 workers
+            else:                    
+                self.hit_create(numWorkers, reward, duration)
+
         elif arg['extend']:
             self.hit_extend(arg['<HITid>'], arg['<number>'], arg['<minutes>'])
         elif arg['expire']:
